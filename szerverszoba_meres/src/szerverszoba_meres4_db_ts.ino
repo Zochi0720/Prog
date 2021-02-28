@@ -121,5 +121,5 @@ void loop() // Utasitasok ismetlese amig van tapfeszultseg
   Serial.println("Várakozás a következő beolvasásig...");
   
   // ThingSpeak-nek szüksége legalább 15 másodperces késleltetésre az adatok frissítéséhez.
-  delay(55000); // Nagyjabol 3 percenkenti adatkuldest valosit meg. (180-185 mp)
+  delay(175000); // Nagyjabol 3 percenkenti adatkuldest valosit meg. (180-185 mp)
 }
