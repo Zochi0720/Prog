@@ -124,10 +124,6 @@ else {
   datah = h;
 }
 
-
-
-  // ThingSpeak szerver fele adatok tovabbkuldese
- 
 }
 
 void WiFiConnecting() { // WiFi kapcsolodasi folyamat
