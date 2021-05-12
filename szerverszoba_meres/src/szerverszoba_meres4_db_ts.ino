@@ -11,6 +11,7 @@
 #define RED 4
 #define GREEN 14
 #define BLUE 12
+#define DEBUG_MODE 0
 #define myChannelNumber SECRET_CH_ID
 #define SPEED_SLOW 1000
 #define SPEED_FAST 300
@@ -57,7 +58,9 @@ MySQL_Cursor* cursor; // MYSQL kurzor a muveletek elvegzesehez.
 
 void setup() // Beuzemelesi fazis
 {
-  Serial.begin(9600); // NodeMCU javasolt beallitasa miatt. (baud)
+  if (DEBUG_MODE == 1) {
+    Serial.begin(9600); // NodeMCU javasolt beallitasa miatt. (baud)
+  }
   delay(LOW_DELAY);
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
@@ -66,9 +69,9 @@ void setup() // Beuzemelesi fazis
   WiFi.mode(WIFI_STA); 
   
   pinMode(LED_BUILTIN, OUTPUT);
-  setColor(173,6,2);
+  setColor(173,6,2); // PIROS SZIN
   WiFiConnecting();
-  setColor(6,195,2);
+  setColor(6,195,2); // ZOLD SZIN
   ThingSpeak.begin(client); // ThingSpeak kapcsolat felepitese
 }
 
@@ -89,10 +92,10 @@ void sendDataToThingSpeak(float data1, float data2) { // ket lebego pontos ertek
   //ThingSpeak.setField(TS_FIELD_H, data2); // field6-ba homerseklet (negyedeves atlaghomerseklet - 92 nap)
   
   int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey); // channel szam, irasra API kulcs
-  Serial.print("#D Statuszkod erteke (Thingspeak) : ");
-  Serial.println(x);
+    Serial.print("#D Statuszkod erteke (Thingspeak) : ");
+    Serial.println(x);
   if (x == TS_OK_STATUSCODE) {
-    delay(2*DELAY_GENERAL);
+    ledBlinking(0,2,false); // 2 hosszu, 0 rovid villanas, eloszor a hosszu villanasok
   }
   else if ( x != TS_OK_STATUSCODE)  {
      if (k <= MAX_TS_ERRORS) {
@@ -115,7 +118,6 @@ void readingDatas(unsigned int counter) { // Szenzorrol olvasasi folyamat
  delay(DELAY_GENERAL);      
  float t = DHT.temperature; // Szenzor altal mert homerseklet ertekenek eltarolasa egy t nevu float tipusu valtozoba
  delay(DELAY_GENERAL);
-
  Serial.print("#D: T: ");
  Serial.print(t);
  Serial.print(" , H: ");
@@ -123,6 +125,7 @@ void readingDatas(unsigned int counter) { // Szenzorrol olvasasi folyamat
  Serial.print("#D Check-sum erteke (DHT22) : ");
  Serial.println(readData);
   if (readData != 0) {
+   ledBlinking(2,1,true);
    errorCounter += 1;
    while (errorCounter < counter) {
     readData = DHT.read(DHTPIN); // Adatok leolvasasa a szenzorrol
@@ -133,6 +136,7 @@ void readingDatas(unsigned int counter) { // Szenzorrol olvasasi folyamat
               
     if (readData == 0) {
      v = true;
+     ledBlinking(0,1,true);
      break;
     }
    }
@@ -152,7 +156,7 @@ void readingDatas(unsigned int counter) { // Szenzorrol olvasasi folyamat
 }
 
 void WiFiConnecting() { // WiFi kapcsolodasi folyamat
-     setColor(173,6,2);
+     setColor(173,6,2); // PIROS SZIN
      WiFi.begin(ssid,pass);
      while (WiFi.status() != WL_CONNECTED) 
      {    
@@ -160,12 +164,12 @@ void WiFiConnecting() { // WiFi kapcsolodasi folyamat
      }
       
      if (WiFi.status() == WL_CONNECTED) { // Ha a WiFi kapcsolat csatlakozott statuszban van
-       setColor(6,195,2);
+       setColor(6,195,2); // ZOLD SZIN
         Serial.print(F("SSID: "));
         Serial.print(ssid);
         Serial.print(F(", IP-cím: "));
         Serial.println(WiFi.localIP());
-      }
+  }
 }
 
 void MySQLConnection() { // MYSQL kapcsolodasi folyamat
@@ -210,7 +214,14 @@ void loop() // Utasitasok ismetlese amig van tapfeszultseg
     ledBlinking(3,0,true);
     MySQLConnection(); // MYSQL kapcsolodasi folyamat
     SendDataToDatabase(); // Adatbazis fele adatkuldesi folyamat
-    ledBlinking(0,1,false); // 0 rovid, 1 hosszu, eloszor a hosszu villanasok | Homersekleti ertekek elkuldve a megfelelo helyre.
+    setColor(51,51,255); // KEKES SZIN
+    delay(DELAY_GENERAL);
+    if (WiFi.status() == WL_CONNECTED) {
+      setColor(6,195,2); // ZOLD SZIN
+    }
+    else {
+      setColor(173,6,2); // PIROS SZIN 
+    }
     delay(REFRESH_TIME); // varakozas a kovetkezo beolvasasig
   // A ThingSpeak-nek szuksege van legalabb 15 masodperces kesleltetesre az adatok frissitesehez.
    }
