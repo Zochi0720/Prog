@@ -7,7 +7,7 @@
 
 #define DHTPIN 5 // PIN , ahova a szenzor csatlakozik 5
 #define DHTTYPE DHT22   // there are multiple kinds of DHT sensors
-#define ID 2
+#define ID 1
 #define RED 4
 #define GREEN 14
 #define BLUE 12
@@ -24,8 +24,8 @@
 #define MAX_SENSOR_ERRORS 3
 #define MAX_MYSQL_ERRORS 5
 #define MAX_TS_ERRORS 3
-#define TS_FIELD_T 3
-#define TS_FIELD_H 4
+#define TS_FIELD_T 1
+#define TS_FIELD_H 2
 #define TS_OK_STATUSCODE 200
 
 char * ssid = SECRET_SSID;   // SSID 
@@ -95,12 +95,13 @@ void sendDataToThingSpeak(float data1, float data2) { // ket lebego pontos ertek
     Serial.print("#D Statuszkod erteke (Thingspeak) : ");
     Serial.println(x);
   if (x == TS_OK_STATUSCODE) {
-    ledBlinking(0,2,false); // 2 hosszu, 0 rovid villanas, eloszor a hosszu villanasok
+    ledBlinking(1,1,false); // 2 hosszu, 0 rovid villanas, eloszor a hosszu villanasok
   }
   else if ( x != TS_OK_STATUSCODE)  {
+     ledBlinking(4,0,true); // 4 rovid, 0 hosszu, eloszor a rovid villanasok
      if (k <= MAX_TS_ERRORS) {
        ThingSpeak.setStatus(String(x) + F(" - HIBA "));
-       ledBlinking(4,0,true); // 4 rovid, 0 hosszu, eloszor a rovid villanasok
+        
        k += 1;
        delay(TS_DELAY);
        readingDatas(MAX_SENSOR_ERRORS);
@@ -125,9 +126,9 @@ void readingDatas(unsigned int counter) { // Szenzorrol olvasasi folyamat
  Serial.print("#D Check-sum erteke (DHT22) : ");
  Serial.println(readData);
   if (readData != 0) {
-   ledBlinking(2,1,true);
    errorCounter += 1;
    while (errorCounter < counter) {
+    ledBlinking(3,0,true);
     readData = DHT.read(DHTPIN); // Adatok leolvasasa a szenzorrol
     h = DHT.humidity;
     delay(DELAY_GENERAL);
@@ -136,7 +137,6 @@ void readingDatas(unsigned int counter) { // Szenzorrol olvasasi folyamat
               
     if (readData == 0) {
      v = true;
-     ledBlinking(0,1,true);
      break;
     }
    }
@@ -149,6 +149,7 @@ void readingDatas(unsigned int counter) { // Szenzorrol olvasasi folyamat
     }
        // Rossz értékek kiszűrése
     if (v) {
+   ledBlinking(0,1,false);
    datat = t;
    datah = h;
   }
@@ -175,9 +176,10 @@ void WiFiConnecting() { // WiFi kapcsolodasi folyamat
 void MySQLConnection() { // MYSQL kapcsolodasi folyamat
      byte connections = 1;
      while (!conn.connect(server_addr, 19968, user, password)) {
+      ledBlinking(2,0,true); // 2 rovid, 1 hosszu, eloszor a hosszu villanasok
       connections++;
       if (connections <= MAX_MYSQL_ERRORS) {
-        ledBlinking(2,1,false); // 2 rovid, 1 hosszu, eloszor a hosszu villanasok
+        
         delay(DELAY_GENERAL);
       }
       else {
@@ -187,6 +189,7 @@ void MySQLConnection() { // MYSQL kapcsolodasi folyamat
     Serial.print("#D csatlakozasok szama (Database) : ");
     Serial.println(connections);
     cursor = new MySQL_Cursor(&conn);
+    
 }
 
 void SendDataToDatabase() { // Adatbazis fele adatkuldesi folyamat
@@ -211,17 +214,11 @@ void loop() // Utasitasok ismetlese amig van tapfeszultseg
   readingDatas(MAX_SENSOR_ERRORS); // Szenzorrol olvasasi folyamat
   if (v == true) {
     sendDataToThingSpeak(datat, datah); // ThingSpeak szerver fele az adatok elkuldese
-    ledBlinking(3,0,true);
     MySQLConnection(); // MYSQL kapcsolodasi folyamat
     SendDataToDatabase(); // Adatbazis fele adatkuldesi folyamat
-    setColor(51,51,255); // KEKES SZIN
+    setColor(1,1,242);
     delay(DELAY_GENERAL);
-    if (WiFi.status() == WL_CONNECTED) {
-      setColor(6,195,2); // ZOLD SZIN
-    }
-    else {
-      setColor(173,6,2); // PIROS SZIN 
-    }
+    setColor(6,195,2);
     delay(REFRESH_TIME); // varakozas a kovetkezo beolvasasig
   // A ThingSpeak-nek szuksege van legalabb 15 masodperces kesleltetesre az adatok frissitesehez.
    }
